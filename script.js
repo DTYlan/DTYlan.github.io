@@ -1,7 +1,3 @@
-window.onload = function(){
-	console.log("Ready");
-};
-
 const inputs = [
 	{ element: document.querySelector("#curAlt"), label: "Current Altitude" },
 	{ element: document.querySelector("#tarAlt"), label: "Target Altitude" },
@@ -13,20 +9,36 @@ const inputs = [
 
 const output = document.querySelector("#result");
 
+document.querySelector("#calBtn").addEventListener("click", calTod);
+document.querySelector("#rstBtn").addEventListener("click", () => { resetInput(true) });
+
 function resetInput(values){
 	inputs.forEach(({ element }) => {
 		if (values) {
 			element.value = "";
 		}
+		
+		const helper = document.querySelector(`#${element.getAttribute('id')}-helper`);
+		if (helper !== null) {
+			helper.remove();
+		}
 		element.removeAttribute("aria-invalid");
 		element.removeAttribute("aria-describedby");
 	});
-	document.querySelectorAll("small").forEach(e => e.remove());
 	output.innerHTML = "";
 }
 
 //	Returns [currentAlt, targetAlt, targetRate, ...] if pass, else returns null
 function validateInput(){
+	const invalidInput = inputs.find(
+        ({ element }) => !element.checkValidity()
+    );
+
+    if (invalidInput) {
+        invalidInput.element.reportValidity();
+        return null;
+    }
+	
 	const errors = [];
 	
 	const values = inputs.map(({ element, label }) => {
@@ -64,8 +76,7 @@ function validateInput(){
 	//	Check target rate
 	if (
 		targetRate !== null &&
-		targetRate < 0.1 ||
-		targetRate > 10
+		( targetRate < 0.1 ||targetRate > 10 )
 	) {
 		errors.push(["tarRate", "Target Descent Path must be between 0.1 and 10."]);
 	}
@@ -84,8 +95,7 @@ function validateInput(){
 		currentAlt !== null &&
 		targetAlt !== null &&
 		speedAlt !== null &&
-		speedAlt > currentAlt ||
-		speedAlt < targetAlt 
+		( speedAlt > currentAlt || speedAlt < targetAlt )
 	) {
 		errors.push(["spdAlt", "Altitude Constraint must be between " + currentAlt + "ft and " + targetAlt + "ft."]);
 	}
@@ -110,12 +120,16 @@ function validateInput(){
 	return values;
 }
 
-function calDis(upperAlt, lowerAlt, rate) {
-	//	Rounded to nearest 0.1 nm
-	return Math.round(((upperAlt - lowerAlt) / rate) * 10) / 10;
+function calDes(upperAlt, lowerAlt, deg) {
+	const grad = 6076.12 * Math.tan(deg * Math.PI / 180);	//	Get ft per nm
+	const dist = (upperAlt - lowerAlt) / grad;
+	return {
+		gradient: grad,
+		distance: dist
+	};
 }
 
-function calDes() {
+function calTod() {
 	resetInput(false);
 	const values = validateInput();
 	
@@ -124,16 +138,13 @@ function calDes() {
 	const [currentAlt, targetAlt, targetRate, speed, speedAtAlt, speedAlt] = values;
 	let dist = 0;
 	
-	//	Get ft per nm
-	const rate = Math.round(6076.12 * Math.tan((targetRate * Math.PI) / 180));
-	
 	if (speed != speedAtAlt) {
 		const buffer = (speed - speedAtAlt) / 10;
-		dist = ((calDis(currentAlt, speedAlt, rate) + calDis(speedAlt, targetAlt, rate)) + buffer).toFixed(1);
-		output.innerHTML = `<br><p>Begin descent <strong>${dist} nm</strong> to target.<br>Level at <strong>${speedAlt} ft</strong> to reduce to <strong>${speedAtAlt} kts</strong> for <strong>${buffer} nm</strong>.</p>`;
+		dist = (calDes(currentAlt, speedAlt, targetRate).distance + calDes(speedAlt, targetAlt, targetRate).distance) + buffer;
+		output.innerHTML = `<br><p>Begin descent <strong>${dist.toFixed(1)} nm</strong> to target.<br>Level at <strong>${speedAlt} ft</strong> to reduce to <strong>${speedAtAlt} kts</strong> for <strong>${buffer} nm</strong>.</p>`;
 	} else {
 		//	Workout distance
-		dist = calDis(currentAlt, targetAlt, rate);
-		output.innerHTML = `<br><p>Begin descent <strong>${dist} nm</strong> to target.</p>`;
+		dist = calDes(currentAlt, targetAlt, targetRate).distance;
+		output.innerHTML = `<br><p>Begin descent <strong>${dist.toFixed(1)} nm</strong> to target.</p>`;
 	}
 }
