@@ -15,7 +15,7 @@ document.querySelector("#rstBtn").addEventListener("click", () => { resetInput(t
 function resetInput(values){
 	inputs.forEach(({ element }) => {
 		if (values) {
-			element.value = "";
+			element.value = element.defaultValue;
 		}
 		
 		//	Remove helper
@@ -91,7 +91,7 @@ function validateInput(){
 	if (
 		speed !== null &&
 		speedAtAlt !== null &&
-		speedAtAlt > speed
+		speedAtAlt >= speed
 	) {
 		errors.push(["spdAtAlt", "Speed Constraint must be slower than Indicated Airspeed."]);
 	}
@@ -101,7 +101,7 @@ function validateInput(){
 		currentAlt !== null &&
 		targetAlt !== null &&
 		speedAlt !== null &&
-		( speedAlt > currentAlt || speedAlt < targetAlt )
+		( speedAlt >= currentAlt || speedAlt <= targetAlt )
 	) {
 		errors.push(["spdAlt", "Altitude Constraint must be between " + currentAlt + "ft and " + targetAlt + "ft."]);
 	}
@@ -135,6 +135,33 @@ function calDes(upperAlt, lowerAlt, deg) {
 	};
 }
 
+function displayResult(data) {
+	const template = document.querySelector("#resultTemplate");
+	const fragment = template.content.cloneNode(true);
+	
+	const setText = (field, value) => {
+		fragment.querySelector(`[data-field="${field}"]`).textContent = value;
+	};
+	
+	setText("distance", data.distance.toFixed(1));
+	setText("currentAlt", data.currentAlt);
+	setText("targetAlt", data.targetAlt);
+	setText("angle", data.angle);
+	setText("gradient", data.gradient.toFixed(0));
+	setText("distanceNote", data.constraint ? "Includes additional distance allowance for the speed constraint." : "Based on the selected descent angle.");
+
+	const constraintSection = fragment.querySelector('[data-section="constraint"]');
+
+	if (data.constraint) {
+		setText("speedAlt", data.speedAlt);
+		setText("speed", data.speedAtAlt);
+		setText("buffer", data.buffer.toFixed(1));
+		constraintSection.hidden = false;
+	}
+
+	output.replaceChildren(fragment);
+}
+
 function calTod() {
 	resetInput(false);
 	const values = validateInput();
@@ -142,15 +169,41 @@ function calTod() {
 	if (values === null) return;
 	
 	const [currentAlt, targetAlt, targetRate, speed, speedAtAlt, speedAlt] = values;
-	let dist = 0;
 	
-	if (speed != speedAtAlt) {
+	if (
+		speed !== null &&
+		speedAtAlt !== null &&
+		speedAlt !== null
+	) {
 		const buffer = (speed - speedAtAlt) / 10;
-		dist = (calDes(currentAlt, speedAlt, targetRate).distance + calDes(speedAlt, targetAlt, targetRate).distance) + buffer;
-		output.innerHTML = `<br><p>Begin descent <strong>${dist.toFixed(1)} nm</strong> to target.<br>Level at <strong>${speedAlt} ft</strong> to reduce to <strong>${speedAtAlt} kts</strong> for <strong>${buffer} nm</strong>.</p>`;
+		const upperResult = calDes(currentAlt, speedAlt, targetRate);
+		const lowerResult = calDes(speedAlt, targetAlt, targetRate);
+		const result = {
+			gradient: upperResult.gradient,
+			distance: upperResult.distance + lowerResult.distance + buffer
+		 };
+		
+		displayResult({
+			distance: result.distance,
+			currentAlt,
+			targetAlt,
+			angle: targetRate,
+			gradient: result.gradient,
+			constraint: true,
+			speedAlt,
+			speedAtAlt,
+			buffer
+		});
 	} else {
-		//	Workout distance
-		dist = calDes(currentAlt, targetAlt, targetRate).distance;
-		output.innerHTML = `<br><p>Begin descent <strong>${dist.toFixed(1)} nm</strong> to target.</p>`;
+		const result = calDes(currentAlt, targetAlt, targetRate);
+	
+		displayResult({
+			distance: result.distance,
+			currentAlt,
+			targetAlt,
+			angle: targetRate,
+			gradient: result.gradient,
+			constraint: false
+		});
 	}
 }
