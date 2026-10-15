@@ -21,13 +21,13 @@
 		
 		<main class="container">
 			<hgroup>
-				<h4>Tutorial</h4>
+				<h3>Tutorial</h3>
 				<ol>
 					<li>Input your current altitude then your target altitude e.g. IAF.</li>
-					<li>Target Descent Path is typically 3&deg; on a A320, some aircraft with less drag e.g. A330 will use 2.5&deg;.</li>
+					<li>Target Descent Path is typically 3&deg; on an A320, some aircraft with less drag e.g. A330 will use 2.5&deg;.</li>
 					<li>Input your indicated airspeed below FL280. (Only required if using a speed constraint)</li>
-					<li>Constraints are setup for the default 250 knots below FL100.</li>
-					<li>Calculate and begin descent according to the result. (Speed constraint will required level flight)</li>
+					<li>Constraints are setup for the default 250 knots below FL100. Clear the constraint fields if they are not needed.</li>
+					<li>Calculate and begin descent according to the result. (Speed constraint will require you to level off)</li>
 				</ol>
 			</hgroup>
 		
@@ -35,14 +35,14 @@
 				<label>
 					Current Altitude:
 					<div role="group">
-						<input type="number" id="curAlt" min="0" max="66000" step="1" placeholder="24000" required>
+						<input type="number" id="curAlt" min="0" max="66000" step="1" placeholder="24000" value="" required>
 						<input type="submit" value="feet" class="outline contrast" disabled>
 					</div>
 				</label>
 				<label>
 					Target Altitude:
 					<div role="group">
-						<input type="number" id="tarAlt" min="0" max="66000" step="1" placeholder="3000" required>
+						<input type="number" id="tarAlt" min="0" max="66000" step="1" placeholder="3000" value="" required>
 						<input type="submit" value="feet" class="outline contrast" disabled>
 					</div>
 				</label>
@@ -83,7 +83,38 @@
 			<button id="calBtn">Calculate</button>
 			<button id="rstBtn" class="secondary">Reset</button>
 			
-			<div id="result"></div>
+			<hr>
+			
+			<div id="result" aria-live="polite" role="status"></div>
+			
+			<template id="resultTemplate">
+				<article>
+					<header>
+						<small>TOP OF DESCENT</small>
+						<h2><span data-field="distance"></span> <small>NM</small></h2>
+						<p data-field="distanceNote"></p>
+					</header>
+
+					<p>
+						<strong>Descent profile</strong><br>
+						From <span data-field="currentAlt"></span> ft
+						to <span data-field="targetAlt"></span> ft<br>
+						Target descent angle: <span data-field="angle"></span>°<br>
+						Descent gradient: <span data-field="gradient"></span> ft per NM
+					</p>
+
+					<section data-section="constraint" hidden>
+						<hr>
+						<p>
+							<strong>Speed constraint</strong><br>
+							Level at <span data-field="speedAlt"></span> ft
+							to reduce to <span data-field="speed"></span> kt.<br>
+							Additional distance allowance:
+							<span data-field="buffer"></span> NM
+						</p>
+					</section>
+				</article>
+			</template>
 		</main>
 		
 		<footer class="container">
