@@ -1,10 +1,10 @@
 const inputs = [
-	{ element: document.querySelector("#curAlt"), label: "Current Altitude" },
-	{ element: document.querySelector("#tarAlt"), label: "Target Altitude" },
-	{ element: document.querySelector("#tarRate"), label: "Target Descent Path" },
-	{ element: document.querySelector("#spd"), label: "Indicated Airspeed" },
-	{ element: document.querySelector("#spdAtAlt"), label: "Speed Constraint" },
-	{ element: document.querySelector("#spdAlt"), label: "Altitude Constraint" }
+	{ element: document.querySelector("#curAlt"), label: "Current Altitude", required: true },
+	{ element: document.querySelector("#tarAlt"), label: "Target Altitude", required: true },
+	{ element: document.querySelector("#tarRate"), label: "Target Descent Path", required: true },
+	{ element: document.querySelector("#spd"), label: "Indicated Airspeed", required: false },
+	{ element: document.querySelector("#spdAtAlt"), label: "Speed Constraint", required: false },
+	{ element: document.querySelector("#spdAlt"), label: "Altitude Constraint", required: false }
 ];
 
 const output = document.querySelector("#result");
@@ -18,6 +18,7 @@ function resetInput(values){
 			element.value = "";
 		}
 		
+		//	Remove helper
 		const helper = document.querySelector(`#${element.getAttribute('id')}-helper`);
 		if (helper !== null) {
 			helper.remove();
@@ -41,28 +42,33 @@ function validateInput(){
 	
 	const errors = [];
 	
-	const values = inputs.map(({ element, label }) => {
+	const values = inputs.map(({ element, label, required }) => {
 		const rawValue = element.value.trim();
 		
 		//	Check if empty
 		if (rawValue === "") {
-			errors.push([element.getAttribute("id"), `${label} can't be empty.`]);
+			if (required) {
+				errors.push([element.getAttribute("id"), `${label} can't be empty.`]);
+			}
 			return null;
 		}
 		
 		const value = Number(rawValue);
-		
-		/* Redundant if browser forces number
-		//	Check if number is real
-		if (!Number.isFinite(value)) {
-			errors.push(`${label} must be a vaild number.`);
-			return null;
-		}*/
-		
 		return value;
 	}); 
 	
 	const [currentAlt, targetAlt, targetRate, speed, speedAtAlt, speedAlt] = values;
+	
+	//	Check optional speed constraints
+	const optionalInputs = inputs.some(({ element, required }) => !required && element.value.trim() !== "");
+	
+	if (optionalInputs) {
+		inputs.forEach(({ element, label, required }, index) => {
+			if (!required && values[index] === null) {
+				errors.push([element.getAttribute('id'), `${label} is required when using a speed constraint.`]);
+			}
+		});
+	}
 	
 	//	Check Current alt is greater than Target
 	if (
@@ -76,7 +82,7 @@ function validateInput(){
 	//	Check target rate
 	if (
 		targetRate !== null &&
-		( targetRate < 0.1 ||targetRate > 10 )
+		( targetRate < 0.1 || targetRate > 10 )
 	) {
 		errors.push(["tarRate", "Target Descent Path must be between 0.1 and 10."]);
 	}
