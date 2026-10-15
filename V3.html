@@ -22,7 +22,13 @@
 		<main class="container">
 			<hgroup>
 				<h4>Tutorial</h4>
-				<p></p>
+				<ol>
+					<li>Input your current altitude then your target altitude e.g. IAF.</li>
+					<li>Target Descent Path is typically 3&deg; on a A320, some aircraft with less drag e.g. A330 will use 2.5&deg;.</li>
+					<li>Input your indicated airspeed below FL280. (Only required if using a speed constraint)</li>
+					<li>Constraints are setup for the default 250 knots below FL100.</li>
+					<li>Calculate and begin descent according to the result. (Speed constraint will required level flight)</li>
+				</ol>
 			</hgroup>
 		
 			<fieldset class="grid">
@@ -52,7 +58,7 @@
 				<label>
 					Indicated Airspeed:
 					<div role="group">
-						<input type="number" id="spd" min="100" max="500" step="1" placeholder="300" required>
+						<input type="number" id="spd" min="100" max="500" step="1" placeholder="300">
 						<input type="submit" value="knots" class="outline contrast" disabled>
 					</div>
 				</label>
@@ -61,14 +67,14 @@
 				<label>
 					Speed Constraint:
 					<div role="group">
-						<input type="number" id="spdAtAlt" min="100" max="500" step="1" placeholder="250" value="250" required>
+						<input type="number" id="spdAtAlt" min="100" max="500" step="1" placeholder="250" value="250">
 						<input type="submit" value="knots" class="outline contrast" disabled>
 					</div>
 				</label>
 				<label>
 					Altitude Constraint:
 					<div role="group">
-						<input type="number" id="spdAlt" min="0" max="66000" step="1" placeholder="10000" value="10000" required>
+						<input type="number" id="spdAlt" min="0" max="66000" step="1" placeholder="10000" value="10000">
 						<input type="submit" value="feet" class="outline contrast" disabled>
 					</div>
 				</label>
